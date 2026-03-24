@@ -153,7 +153,6 @@ export function App() {
   const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({})
 
   const errors = useMemo(() => validate(state), [state])
-  const hasErrors = Object.keys(errors).length > 0
   const statusRegionId = useId()
 
   function markTouched(name: keyof FormState) {
@@ -587,15 +586,9 @@ export function App() {
               <div id={statusRegionId} className="srOnly" aria-live="polite">
                 {submitState.type === 'submitting' ? 'Submitting' : ''}
               </div>
-
-              <div className="finePrint">{hasErrors ? 'Some fields need attention.' : ' '}</div>
             </div>
           </form>
         </section>
-
-        <footer className="footer">
-          <span className="footerText">Secure submission via n8n webhook.</span>
-        </footer>
       </main>
     </div>
   )
