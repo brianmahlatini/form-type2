@@ -107,9 +107,27 @@ function toFormData(state: FormState) {
 function validate(state: FormState) {
   const errors: Partial<Record<keyof FormState, string>> = {}
 
+  if (!state.mainMemberIdNumber.trim())
+    errors.mainMemberIdNumber = 'Enter the main member ID number.'
+  if (!state.policyNumber.trim()) errors.policyNumber = 'Enter the policy number.'
+
+  if (!state.deceasedIdNumber.trim()) errors.deceasedIdNumber = 'Enter the deceased ID number.'
   if (!state.causeOfDeath) errors.causeOfDeath = 'Select a cause of death.'
+
   if (!state.beneficiaryFirstName.trim())
     errors.beneficiaryFirstName = 'Enter the beneficiary first name.'
+  if (!state.beneficiarySurname.trim())
+    errors.beneficiarySurname = 'Enter the beneficiary surname.'
+  if (!state.beneficiaryIdNumber.trim())
+    errors.beneficiaryIdNumber = 'Enter the beneficiary ID number.'
+  if (!state.beneficiaryAccountNumber.trim())
+    errors.beneficiaryAccountNumber = 'Enter the beneficiary account number.'
+  if (!state.bankName.trim()) errors.bankName = 'Select a bank name.'
+  if (!state.accountType.trim()) errors.accountType = 'Select an account type.'
+
+  if (!state.contactEmail.trim()) errors.contactEmail = 'Enter your contact email.'
+  if (!state.dateOfDeath.trim()) errors.dateOfDeath = 'Select the date of death.'
+  if (state.documents.length === 0) errors.documents = 'Upload at least one document.'
 
   if (
     state.contactEmail.trim() &&
@@ -142,6 +160,10 @@ export function App() {
     setTouched((prev) => (prev[name] ? prev : { ...prev, [name]: true }))
   }
 
+  function fieldError(name: keyof FormState) {
+    return touched[name] ? errors[name] : undefined
+  }
+
   function onChangeText(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.currentTarget
     setState((prev) => ({ ...prev, [name]: value }))
@@ -155,12 +177,21 @@ export function App() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    setTouched((prev) => ({
-      ...prev,
+    setTouched({
+      mainMemberIdNumber: true,
+      policyNumber: true,
+      deceasedIdNumber: true,
       causeOfDeath: true,
       beneficiaryFirstName: true,
+      beneficiarySurname: true,
+      beneficiaryIdNumber: true,
+      beneficiaryAccountNumber: true,
+      bankName: true,
+      accountType: true,
       contactEmail: true,
-    }))
+      dateOfDeath: true,
+      documents: true,
+    })
 
     const freshErrors = validate(state)
     if (Object.keys(freshErrors).length > 0) {
@@ -193,9 +224,7 @@ export function App() {
   }
 
   const summary = submitState.type === 'error' ? submitState.message : null
-  const causeError = touched.causeOfDeath ? errors.causeOfDeath : undefined
-  const firstNameError = touched.beneficiaryFirstName ? errors.beneficiaryFirstName : undefined
-  const emailError = touched.contactEmail ? errors.contactEmail : undefined
+  const causeError = fieldError('causeOfDeath')
 
   const docHelpId = useId()
   const deceasedIdInputId = useId()
@@ -247,6 +276,8 @@ export function App() {
                   onBlur={() => markTouched('mainMemberIdNumber')}
                   inputMode="numeric"
                   autoComplete="off"
+                  required
+                  error={fieldError('mainMemberIdNumber')}
                 />
                 <Field
                   label="Policy number"
@@ -255,6 +286,8 @@ export function App() {
                   onChange={onChangeText}
                   onBlur={() => markTouched('policyNumber')}
                   autoComplete="off"
+                  required
+                  error={fieldError('policyNumber')}
                 />
               </div>
             </div>
@@ -265,24 +298,29 @@ export function App() {
                 <div className="field">
                   <div className="labelRow">
                     <label className="label" htmlFor={deceasedIdInputId}>
-                      Deceased ID number
+                      Deceased ID number <span className="req">*</span>
                     </label>
                   </div>
                   <input
                     id={deceasedIdInputId}
                     name="deceasedIdNumber"
                     type="text"
-                    className="input"
+                    className={fieldError('deceasedIdNumber') ? 'input inputError' : 'input'}
                     value={state.deceasedIdNumber}
                     onChange={onChangeText}
                     onBlur={() => markTouched('deceasedIdNumber')}
                     inputMode="numeric"
                     autoComplete="off"
                     aria-describedby={deceasedIdHelpId}
+                    aria-invalid={fieldError('deceasedIdNumber') ? 'true' : undefined}
+                    required
                   />
                   <div id={deceasedIdHelpId} className="help">
                     Provide the deceased person's ID number if available.
                   </div>
+                  {fieldError('deceasedIdNumber') ? (
+                    <div className="error">{fieldError('deceasedIdNumber')}</div>
+                  ) : null}
                 </div>
                 <div className="field">
                   <div className="labelRow">
@@ -336,22 +374,27 @@ export function App() {
                 <div className="field">
                   <div className="labelRow">
                     <label className="label" htmlFor="dateOfDeath">
-                      Date of death
+                      Date of death <span className="req">*</span>
                     </label>
                   </div>
                   <input
                     id="dateOfDeath"
                     name="dateOfDeath"
                     type="date"
-                    className="input"
+                    className={fieldError('dateOfDeath') ? 'input inputError' : 'input'}
                     value={state.dateOfDeath}
                     onChange={onChangeText}
                     onBlur={() => markTouched('dateOfDeath')}
                     aria-describedby={deathDateHelpId}
+                    aria-invalid={fieldError('dateOfDeath') ? 'true' : undefined}
+                    required
                   />
                   <div id={deathDateHelpId} className="help">
                     Day, month, year.
                   </div>
+                  {fieldError('dateOfDeath') ? (
+                    <div className="error">{fieldError('dateOfDeath')}</div>
+                  ) : null}
                 </div>
 
                 <Field
@@ -362,7 +405,8 @@ export function App() {
                   onBlur={() => markTouched('contactEmail')}
                   type="email"
                   autoComplete="email"
-                  error={emailError}
+                  required
+                  error={fieldError('contactEmail')}
                 />
               </div>
             </div>
@@ -371,17 +415,14 @@ export function App() {
               <h2 className="sectionTitle">Beneficiary details</h2>
               <div className="grid2">
                 <Field
-                  label={
-                    <>
-                      Beneficiary first name <span className="req">*</span>
-                    </>
-                  }
+                  label="Beneficiary first name"
                   name="beneficiaryFirstName"
                   value={state.beneficiaryFirstName}
                   onChange={onChangeText}
                   onBlur={() => markTouched('beneficiaryFirstName')}
                   autoComplete="given-name"
-                  error={firstNameError}
+                  required
+                  error={fieldError('beneficiaryFirstName')}
                 />
                 <Field
                   label="Beneficiary surname"
@@ -390,6 +431,8 @@ export function App() {
                   onChange={onChangeText}
                   onBlur={() => markTouched('beneficiarySurname')}
                   autoComplete="family-name"
+                  required
+                  error={fieldError('beneficiarySurname')}
                 />
               </div>
 
@@ -402,6 +445,8 @@ export function App() {
                   onBlur={() => markTouched('beneficiaryIdNumber')}
                   inputMode="numeric"
                   autoComplete="off"
+                  required
+                  error={fieldError('beneficiaryIdNumber')}
                 />
                 <Field
                   label="Beneficiary account number"
@@ -411,6 +456,8 @@ export function App() {
                   onBlur={() => markTouched('beneficiaryAccountNumber')}
                   inputMode="numeric"
                   autoComplete="off"
+                  required
+                  error={fieldError('beneficiaryAccountNumber')}
                 />
               </div>
 
@@ -418,17 +465,19 @@ export function App() {
                 <div className="field">
                   <div className="labelRow">
                     <label className="label" htmlFor="bankName">
-                      Bank name
+                      Bank name <span className="req">*</span>
                     </label>
                   </div>
                   <select
                     id="bankName"
                     name="bankName"
-                    className="input"
+                    className={fieldError('bankName') ? 'input inputError' : 'input'}
                     value={state.bankName}
                     onChange={onChangeSelect}
                     onBlur={() => markTouched('bankName')}
                     aria-describedby={bankHelpId}
+                    aria-invalid={fieldError('bankName') ? 'true' : undefined}
+                    required
                   >
                     <option value="">Please select bank name</option>
                     {bankNames.map((bank) => (
@@ -440,27 +489,33 @@ export function App() {
                   <div id={bankHelpId} className="help">
                     Select the beneficiary’s bank to help match the account.
                   </div>
+                  {fieldError('bankName') ? <div className="error">{fieldError('bankName')}</div> : null}
                 </div>
 
                 <div className="field">
                   <div className="labelRow">
                     <label className="label" htmlFor="accountType">
-                      Account type
+                      Account type <span className="req">*</span>
                     </label>
                   </div>
                   <select
                     id="accountType"
                     name="accountType"
-                    className="input"
+                    className={fieldError('accountType') ? 'input inputError' : 'input'}
                     value={state.accountType}
                     onChange={onChangeSelect}
                     onBlur={() => markTouched('accountType')}
+                    aria-invalid={fieldError('accountType') ? 'true' : undefined}
+                    required
                   >
                     <option value="">Please select account type</option>
                     <option value="Savings">Savings</option>
                     <option value="Current">Current</option>
                     <option value="Cheque">Cheque</option>
                   </select>
+                  {fieldError('accountType') ? (
+                    <div className="error">{fieldError('accountType')}</div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -470,7 +525,7 @@ export function App() {
               <div className="field">
                 <div className="labelRow">
                   <label className="label" htmlFor="documents">
-                    Upload documents
+                    Upload documents <span className="req">*</span>
                   </label>
                 </div>
                 <input
@@ -486,11 +541,14 @@ export function App() {
                   }}
                   onBlur={() => markTouched('documents')}
                   aria-describedby={docHelpId}
+                  aria-invalid={fieldError('documents') ? 'true' : undefined}
+                  required
                 />
                 <div id={docHelpId} className="help">
                   Death Certificate, Notice of Death, Beneficiary ID, Deceased ID, and a recent
                   beneficiary bank statement.
                 </div>
+                {fieldError('documents') ? <div className="error">{fieldError('documents')}</div> : null}
 
                 {state.documents.length > 0 ? (
                   <div className="fileList" aria-label="Selected documents">
@@ -554,6 +612,7 @@ type FieldProps = {
   autoComplete?: string
   error?: string
   describedBy?: string
+  required?: boolean
 }
 
 function Field({
@@ -567,6 +626,7 @@ function Field({
   autoComplete,
   error,
   describedBy,
+  required,
 }: FieldProps) {
   const id = useId()
   const errId = useId()
@@ -576,6 +636,7 @@ function Field({
       <div className="labelRow">
         <label className="label" htmlFor={id}>
           {label}
+          {required ? <span className="req"> *</span> : null}
         </label>
       </div>
       <input
@@ -590,6 +651,7 @@ function Field({
         onBlur={onBlur}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={[describedBy, error ? errId : null].filter(Boolean).join(' ') || undefined}
+        required={required}
       />
       {error ? (
         <div id={errId} className="error">
