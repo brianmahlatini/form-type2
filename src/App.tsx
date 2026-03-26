@@ -1,14 +1,11 @@
-import React, { useId, useState } from 'react'
+import React, { useId, useRef, useState } from 'react'
 
 const WEBHOOK_URL = 'https://kgadev.app.n8n.cloud/webhook-test/claim-submission'
 
-type ClaimType = 'Death Claim' | 'Funeral Claim (Group Scheme)' | 'Dread Disease Claim'
 type CauseOfDeath = 'Natural' | 'Stillborn' | 'Under Investigation' | 'Un-natural'
 type DeathCertificateCopyType = '' | 'Original' | 'Certified Copy'
 
 type FormState = {
-  claimType: ClaimType | ''
-
   mainMemberIdNumber: string
   policyNumber: string
 
@@ -29,10 +26,9 @@ type FormState = {
 
   deathCertificateFile: File | null
   deathCertificateCopyType: DeathCertificateCopyType
-  noticeOfDeathFile: File | null
-  deceasedIdDocumentFile: File | null
-  beneficiaryIdDocumentFile: File | null
-  beneficiaryBankStatementFile: File | null
+  deceasedCertifiedIdFile: File | null
+  claimantCertifiedIdFile: File | null
+  completedClaimFormFile: File | null
 }
 
 const bankNames = [
@@ -62,8 +58,6 @@ const bankNames = [
 ] as const
 
 const initialState: FormState = {
-  claimType: '',
-
   mainMemberIdNumber: '',
   policyNumber: '',
 
@@ -84,10 +78,9 @@ const initialState: FormState = {
 
   deathCertificateFile: null,
   deathCertificateCopyType: '',
-  noticeOfDeathFile: null,
-  deceasedIdDocumentFile: null,
-  beneficiaryIdDocumentFile: null,
-  beneficiaryBankStatementFile: null,
+  deceasedCertifiedIdFile: null,
+  claimantCertifiedIdFile: null,
+  completedClaimFormFile: null,
 }
 
 type SubmitState =
@@ -99,10 +92,9 @@ type SubmitState =
 type DocumentPayload = {
   documentType:
     | 'DEATH_CERTIFICATE'
-    | 'NOTICE_OF_DEATH'
-    | 'DECEASED_ID_DOCUMENT'
-    | 'BENEFICIARY_ID_DOCUMENT'
-    | 'BENEFICIARY_BANK_STATEMENT'
+    | 'DECEASED_CERTIFIED_ID'
+    | 'CLAIMANT_CERTIFIED_ID'
+    | 'COMPLETED_CLAIM_FORM'
   filename: string
   contentType: string
   size: number
@@ -110,7 +102,8 @@ type DocumentPayload = {
 }
 
 type SubmissionResult = {
-  claimType: FormState['claimType']
+  claimType: 'Death Claim'
+  policyType: 'Life'
   mainMemberIdNumber: string
   policyNumber: string
   deceasedIdNumber: string
@@ -133,7 +126,8 @@ type SubmissionResult = {
 async function toFormData(state: FormState) {
   const formData = new FormData()
 
-  formData.set('claimType', state.claimType)
+  formData.set('claimType', 'Death Claim')
+  formData.set('policyType', 'Life')
   formData.set('mainMemberIdNumber', state.mainMemberIdNumber)
   formData.set('policyNumber', state.policyNumber)
   formData.set('deceasedIdNumber', state.deceasedIdNumber)
@@ -162,10 +156,9 @@ async function toFormData(state: FormState) {
       file: state.deathCertificateFile,
       copyType: state.deathCertificateCopyType || undefined,
     },
-    { documentType: 'NOTICE_OF_DEATH', file: state.noticeOfDeathFile },
-    { documentType: 'DECEASED_ID_DOCUMENT', file: state.deceasedIdDocumentFile },
-    { documentType: 'BENEFICIARY_ID_DOCUMENT', file: state.beneficiaryIdDocumentFile },
-    { documentType: 'BENEFICIARY_BANK_STATEMENT', file: state.beneficiaryBankStatementFile },
+    { documentType: 'DECEASED_CERTIFIED_ID', file: state.deceasedCertifiedIdFile },
+    { documentType: 'CLAIMANT_CERTIFIED_ID', file: state.claimantCertifiedIdFile },
+    { documentType: 'COMPLETED_CLAIM_FORM', file: state.completedClaimFormFile },
   ]
 
   for (const entry of documentEntries) {
@@ -195,7 +188,8 @@ async function toFormData(state: FormState) {
   formData.set('clientTimeZone', clientTimeZone)
 
   const result: SubmissionResult = {
-    claimType: state.claimType,
+    claimType: 'Death Claim',
+    policyType: 'Life',
     mainMemberIdNumber: state.mainMemberIdNumber,
     policyNumber: state.policyNumber,
     deceasedIdNumber: state.deceasedIdNumber,
@@ -230,10 +224,10 @@ export function App() {
 
   const statusRegionId = useId()
   const deathCertificateInputId = useId()
-  const noticeOfDeathInputId = useId()
-  const deceasedIdDocumentInputId = useId()
-  const beneficiaryIdDocumentInputId = useId()
-  const beneficiaryBankStatementInputId = useId()
+  const deceasedCertifiedIdInputId = useId()
+  const claimantCertifiedIdInputId = useId()
+  const completedClaimFormInputId = useId()
+  const dateOfDeathRef = useRef<HTMLInputElement | null>(null)
 
   function onChangeText(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.currentTarget
@@ -243,6 +237,11 @@ export function App() {
   function onChangeSelect(e: React.ChangeEvent<HTMLSelectElement>) {
     const { name, value } = e.currentTarget
     setState((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function openDatePicker() {
+    const input = dateOfDeathRef.current as HTMLInputElement & { showPicker?: () => void }
+    input?.showPicker?.()
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -298,31 +297,6 @@ export function App() {
                 <div className="alertBody">{submitState.message}</div>
               </div>
             ) : null}
-
-            <div className="section">
-              <h2 className="sectionTitle">Claim type</h2>
-              <fieldset className="radioGroup" aria-label="Claim type">
-                <legend className="srOnly">Claim type</legend>
-                {(['Death Claim', 'Funeral Claim (Group Scheme)', 'Dread Disease Claim'] as const).map(
-                  (option) => (
-                    <div
-                      key={option}
-                      className={state.claimType === option ? 'radioCard radioCardChecked' : 'radioCard'}
-                      onClick={() => setState((prev) => ({ ...prev, claimType: option }))}
-                    >
-                      <input
-                        type="radio"
-                        name="claimType"
-                        value={option}
-                        checked={state.claimType === option}
-                        onChange={() => setState((prev) => ({ ...prev, claimType: option }))}
-                      />
-                      <span className="radioText">{option}</span>
-                    </div>
-                  ),
-                )}
-              </fieldset>
-            </div>
 
             <div className="section">
               <h2 className="sectionTitle">Member & policy</h2>
@@ -388,14 +362,24 @@ export function App() {
                       Date of death
                     </label>
                   </div>
-                  <input
-                    id="dateOfDeath"
-                    name="dateOfDeath"
-                    type="date"
-                    className="input"
-                    value={state.dateOfDeath}
-                    onChange={onChangeText}
-                  />
+                  <div className="dateRow">
+                    <input
+                      id="dateOfDeath"
+                      name="dateOfDeath"
+                      type="date"
+                      className="input"
+                      ref={dateOfDeathRef}
+                      value={state.dateOfDeath}
+                      onChange={onChangeText}
+                      readOnly
+                      onClick={openDatePicker}
+                      onFocus={openDatePicker}
+                      onKeyDown={(e) => e.preventDefault()}
+                    />
+                    <button type="button" className="pickerBtn" onClick={openDatePicker}>
+                      Pick date
+                    </button>
+                  </div>
                 </div>
                 <div className="field" />
               </div>
@@ -567,16 +551,16 @@ export function App() {
 
                 <div className="docCard">
                   <div className="docCardHeader">
-                    <div className="docCardTitle">2. NOTICE OF DEATH</div>
+                    <div className="docCardTitle">2. CERTIFIED ID OF DECEASED</div>
                   </div>
                   <div className="docCardBody">
                     <input
-                      id={noticeOfDeathInputId}
+                      id={deceasedCertifiedIdInputId}
                       type="file"
                       className="file"
                       accept="application/pdf,image/*"
                       onChange={(e) =>
-                        setState((prev) => ({ ...prev, noticeOfDeathFile: fileFromInput(e) }))
+                        setState((prev) => ({ ...prev, deceasedCertifiedIdFile: fileFromInput(e) }))
                       }
                     />
                   </div>
@@ -584,16 +568,16 @@ export function App() {
 
                 <div className="docCard">
                   <div className="docCardHeader">
-                    <div className="docCardTitle">3. DECEASED ID DOCUMENT</div>
+                    <div className="docCardTitle">3. CERTIFIED ID OF CLAIMANT</div>
                   </div>
                   <div className="docCardBody">
                     <input
-                      id={deceasedIdDocumentInputId}
+                      id={claimantCertifiedIdInputId}
                       type="file"
                       className="file"
                       accept="application/pdf,image/*"
                       onChange={(e) =>
-                        setState((prev) => ({ ...prev, deceasedIdDocumentFile: fileFromInput(e) }))
+                        setState((prev) => ({ ...prev, claimantCertifiedIdFile: fileFromInput(e) }))
                       }
                     />
                   </div>
@@ -601,36 +585,16 @@ export function App() {
 
                 <div className="docCard">
                   <div className="docCardHeader">
-                    <div className="docCardTitle">4. BENEFICIARY ID DOCUMENT</div>
+                    <div className="docCardTitle">4. COMPLETED CLAIM FORM</div>
                   </div>
                   <div className="docCardBody">
                     <input
-                      id={beneficiaryIdDocumentInputId}
+                      id={completedClaimFormInputId}
                       type="file"
                       className="file"
                       accept="application/pdf,image/*"
                       onChange={(e) =>
-                        setState((prev) => ({ ...prev, beneficiaryIdDocumentFile: fileFromInput(e) }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="docCard">
-                  <div className="docCardHeader">
-                    <div className="docCardTitle">5. BENEFICIARY BANK STATEMENT</div>
-                  </div>
-                  <div className="docCardBody">
-                    <input
-                      id={beneficiaryBankStatementInputId}
-                      type="file"
-                      className="file"
-                      accept="application/pdf,image/*"
-                      onChange={(e) =>
-                        setState((prev) => ({
-                          ...prev,
-                          beneficiaryBankStatementFile: fileFromInput(e),
-                        }))
+                        setState((prev) => ({ ...prev, completedClaimFormFile: fileFromInput(e) }))
                       }
                     />
                   </div>

@@ -283,6 +283,32 @@ body {
   align-items: center;
 }
 
+.dateRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pickerBtn {
+  flex: none;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.pickerBtn:hover {
+  border-color: rgba(102, 227, 255, 0.3);
+}
+
+.pickerBtn:focus {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
 .moneyPrefix {
   display: grid;
   place-items: center;
