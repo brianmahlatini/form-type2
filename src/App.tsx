@@ -2,10 +2,12 @@ import React, { useId, useRef, useState } from 'react'
 
 const WEBHOOK_URL = 'https://kgadev.app.n8n.cloud/webhook-test/claim-submission'
 
+type ClaimType = 'Death Claim' | 'Funeral Claim (Group Scheme)' | 'Dread Disease Claim'
 type CauseOfDeath = 'Natural' | 'Stillborn' | 'Under Investigation' | 'Un-natural'
 type DeathCertificateCopyType = '' | 'Original' | 'Certified Copy'
 
 type FormState = {
+  claimType: ClaimType | ''
   mainMemberIdNumber: string
   policyNumber: string
 
@@ -58,6 +60,7 @@ const bankNames = [
 ] as const
 
 const initialState: FormState = {
+  claimType: '',
   mainMemberIdNumber: '',
   policyNumber: '',
 
@@ -102,7 +105,7 @@ type DocumentPayload = {
 }
 
 type SubmissionResult = {
-  claimType: 'Death Claim'
+  claimType: FormState['claimType']
   policyType: 'Life'
   mainMemberIdNumber: string
   policyNumber: string
@@ -126,7 +129,8 @@ type SubmissionResult = {
 async function toFormData(state: FormState) {
   const formData = new FormData()
 
-  formData.set('claimType', 'Death Claim')
+  const claimType = state.claimType || 'Death Claim'
+  formData.set('claimType', claimType)
   formData.set('policyType', 'Life')
   formData.set('mainMemberIdNumber', state.mainMemberIdNumber)
   formData.set('policyNumber', state.policyNumber)
@@ -188,7 +192,7 @@ async function toFormData(state: FormState) {
   formData.set('clientTimeZone', clientTimeZone)
 
   const result: SubmissionResult = {
-    claimType: 'Death Claim',
+    claimType,
     policyType: 'Life',
     mainMemberIdNumber: state.mainMemberIdNumber,
     policyNumber: state.policyNumber,
@@ -241,7 +245,13 @@ export function App() {
 
   function openDatePicker() {
     const input = dateOfDeathRef.current as HTMLInputElement & { showPicker?: () => void }
-    input?.showPicker?.()
+    if (!input) return
+    if (typeof input.showPicker === 'function') {
+      input.showPicker()
+      return
+    }
+    input.focus()
+    input.click()
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -297,6 +307,31 @@ export function App() {
                 <div className="alertBody">{submitState.message}</div>
               </div>
             ) : null}
+
+            <div className="section">
+              <h2 className="sectionTitle">Claim type</h2>
+              <fieldset className="radioGroup" aria-label="Claim type">
+                <legend className="srOnly">Claim type</legend>
+                {(['Death Claim', 'Funeral Claim (Group Scheme)', 'Dread Disease Claim'] as const).map(
+                  (option) => (
+                    <div
+                      key={option}
+                      className={state.claimType === option ? 'radioCard radioCardChecked' : 'radioCard'}
+                      onClick={() => setState((prev) => ({ ...prev, claimType: option }))}
+                    >
+                      <input
+                        type="radio"
+                        name="claimType"
+                        value={option}
+                        checked={state.claimType === option}
+                        onChange={() => setState((prev) => ({ ...prev, claimType: option }))}
+                      />
+                      <span className="radioText">{option}</span>
+                    </div>
+                  ),
+                )}
+              </fieldset>
+            </div>
 
             <div className="section">
               <h2 className="sectionTitle">Member & policy</h2>
@@ -367,12 +402,15 @@ export function App() {
                       id="dateOfDeath"
                       name="dateOfDeath"
                       type="date"
-                      className="input"
+                      className="input dateInput"
                       ref={dateOfDeathRef}
                       value={state.dateOfDeath}
                       onChange={onChangeText}
-                      readOnly
+                      onClick={openDatePicker}
+                      inputMode="none"
+                      placeholder="yyyy / mm / dd"
                       onKeyDown={(e) => e.preventDefault()}
+                      onPaste={(e) => e.preventDefault()}
                     />
                     <button
                       type="button"

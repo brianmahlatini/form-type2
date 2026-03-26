@@ -316,6 +316,14 @@ body {
   box-shadow: var(--focus);
 }
 
+.dateInput::-webkit-calendar-picker-indicator {
+  opacity: 0;
+}
+
+.dateInput::-webkit-inner-spin-button {
+  display: none;
+}
+
 .moneyPrefix {
   display: grid;
   place-items: center;
