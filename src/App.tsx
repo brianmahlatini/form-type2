@@ -372,12 +372,27 @@ export function App() {
                       value={state.dateOfDeath}
                       onChange={onChangeText}
                       readOnly
-                      onClick={openDatePicker}
-                      onFocus={openDatePicker}
                       onKeyDown={(e) => e.preventDefault()}
                     />
-                    <button type="button" className="pickerBtn" onClick={openDatePicker}>
-                      Pick date
+                    <button
+                      type="button"
+                      className="pickerBtn"
+                      onClick={openDatePicker}
+                      aria-label="Open calendar"
+                      title="Open calendar"
+                    >
+                      <svg
+                        className="pickerIcon"
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1.5A2.5 2.5 0 0 1 22 6.5v13A2.5 2.5 0 0 1 19.5 22h-15A2.5 2.5 0 0 1 2 19.5v-13A2.5 2.5 0 0 1 4.5 4H6V3a1 1 0 0 1 1-1Zm12.5 8h-15a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h15a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5ZM6 6H4.5a.5.5 0 0 0-.5.5V8h16V6.5a.5.5 0 0 0-.5-.5H18v1a1 1 0 1 1-2 0V6H8v1a1 1 0 1 1-2 0V6Z"
+                        />
+                      </svg>
                     </button>
                   </div>
                 </div>
