@@ -74,7 +74,13 @@ type SubmitState =
   | { type: 'success'; message: string }
   | { type: 'error'; message: string }
 
-function toFormData(state: FormState) {
+type DocumentPayload = {
+  filename: string
+  contentType: string
+  size: number
+}
+
+async function toFormData(state: FormState) {
   const formData = new FormData()
 
   formData.set('mainMemberIdNumber', state.mainMemberIdNumber)
@@ -92,8 +98,17 @@ function toFormData(state: FormState) {
   formData.set('contactEmail', state.contactEmail)
   formData.set('dateOfDeath', state.dateOfDeath)
 
+  const documentsPayload: DocumentPayload[] = state.documents.map((file) => ({
+    filename: file.name,
+    contentType: file.type || 'application/octet-stream',
+    size: file.size,
+  }))
+
+  formData.set('documents', JSON.stringify(documentsPayload))
+  formData.set('documentsCount', String(documentsPayload.length))
+
   for (const file of state.documents) {
-    formData.append('documents', file, file.name)
+    formData.append('documentFiles', file, file.name)
   }
 
   formData.set('submittedAt', new Date().toISOString())
@@ -199,9 +214,10 @@ export function App() {
 
     setSubmitState({ type: 'submitting' })
     try {
+      const body = await toFormData(state)
       const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
-        body: toFormData(state),
+        body,
       })
 
       if (!response.ok) {
