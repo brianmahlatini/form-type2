@@ -1,7 +1,6 @@
 import React, { useId, useMemo, useState } from 'react'
 
-const WEBHOOK_URL =
-  'https://kgadev.app.n8n.cloud/webhook-test/4e55e486-8f0b-4f0e-8ee6-365f2c34e66f'
+const WEBHOOK_URL = 'https://kgadev.app.n8n.cloud/webhook-test/claim-submission'
 
 type CauseOfDeath = 'Natural' | 'Stillborn' | 'Under Investigation' | 'Un-natural'
 
