@@ -276,6 +276,84 @@ body {
   border-color: rgba(102, 227, 255, 0.3);
 }
 
+.moneyRow {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.moneyPrefix {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 44px;
+  border-radius: var(--radius2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.86);
+  font-weight: 750;
+}
+
+.moneyInput {
+  padding-left: 12px;
+}
+
+.docCards {
+  display: grid;
+  gap: 12px;
+}
+
+.docCard {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+  overflow: clip;
+}
+
+.docCardHeader {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.docCardTitle {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.docCardBody {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.docInlineRadios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+
+.docRadio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.docRadio input {
+  accent-color: var(--primary);
+}
+
+.docNote {
+  font-size: 12px;
+  color: var(--muted2);
+}
+
 .fileList {
   margin-top: 10px;
   display: grid;
